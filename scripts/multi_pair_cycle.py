@@ -10,6 +10,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--N_pairs', type=int, default='1')
 parser.add_argument('--runtime', type=int, default='4')
 parser.add_argument('--addr', type=int, default='41')
+parser.add_argument('--pause', type=float, default='0.0005')
 args = parser.parse_args()
 
 b = DriverBoard(args.addr, 16)
@@ -21,9 +22,9 @@ sleep(0.5)
 pairs = []
 for i in range(args.N_pairs):
     if i < 4:
-        lp = LegPair(b, i)
+        lp = LegPair(b, i, incr_pause=args.pause)
     else:
-        lp = LegPair(b_front, i-4)
+        lp = LegPair(b_front, i-4, incr_pause=args.pause)
 
     if i%2 == 1:
         lp.set_phase_offset(pi)

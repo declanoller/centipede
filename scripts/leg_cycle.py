@@ -3,21 +3,28 @@ from Leg import Leg
 from DriverBoard import DriverBoard
 import argparse
 from time import time
+from utils import Side, FrontOrBack
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--index', type=int, default='0')
+parser.add_argument('--hip_index', type=int, required=True)
+parser.add_argument('--knee_index', type=int, required=True)
+parser.add_argument('--side', type=Side, required=True, choices=list(Side))
+parser.add_argument('--front_or_back', type=FrontOrBack, required=True, choices=list(FrontOrBack))
+
+parser.add_argument('--runtime', type=int, default='2')
+parser.add_argument('--addr', type=int, default='41')
+parser.add_argument('--pause', type=float, default='0.005')
 args = parser.parse_args()
 
-b = DriverBoard(41, 16)
+b = DriverBoard(args.addr, 16)
 
-leg = Leg(b, 'L', args.index)
+leg = Leg(b, args.side, args.front_or_back, args.hip_index, args.knee_index, incr_pause=args.pause)
 
 start = time()
-time_limit = 2
 
 while True:
     leg.increment()
-    if time()-start > time_limit:
+    if time() - start > args.runtime:
         break
 
 leg.reset_leg()

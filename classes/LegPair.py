@@ -2,7 +2,7 @@ from Leg import Leg
 
 class LegPair:
 
-    def __init__(self, driver_board, pair_index):
+    def __init__(self, driver_board, pair_index, **kwargs):
 
         # Here, pair_index N will correspond to Leg's 2*N and 2*N+1.
         # Since a Leg has 2 Servo obj's, and a Pair has 2 Leg obj's,
@@ -14,8 +14,8 @@ class LegPair:
         self.leg_L_index = 2*pair_index
         self.leg_R_index = 2*pair_index + 1
 
-        self.leg_L = Leg(driver_board, 'L', self.leg_L_index)
-        self.leg_R = Leg(driver_board, 'R', self.leg_R_index)
+        self.leg_L = Leg(driver_board, 'L', self.leg_L_index, **kwargs)
+        self.leg_R = Leg(driver_board, 'R', self.leg_R_index, **kwargs)
         self.legs = [self.leg_L, self.leg_R]
 
         self.phase_offset = 0

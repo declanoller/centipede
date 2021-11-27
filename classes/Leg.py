@@ -1,40 +1,49 @@
 
 from Servo import Servo
 from math import pi
-
+from time import sleep
+from utils import Side, FrontOrBack, LegPart
 
 class Leg:
 
-    def __init__(self, driver_board, side, leg_index):
+    def __init__(self, driver_board, side, front_or_back, hip_servo_index, knee_servo_index, **kwargs):
 
-        assert side in ['L', 'R'], 'Leg side must be L or R! Val : {}'.format(side)
+        assert side in Side, 'Leg side must be in Side! Val : {}'.format(side)
+        assert front_or_back in FrontOrBack, 'front_or_back must be in FrontOrBack! Val : {}'.format(front_or_back)
 
         self.side = side
+        self.front_or_back = front_or_back
         self.driver_board = driver_board
-        # Okay, so decision to make... It might get tricky with how to assign
-        # the indices for everything in a top-down way. I think I'm gonna say,
-        # leg_index N corresponds to Servo indices 2*N and 2*N+1, where 2*N is the "hip"
-        # (conn'd directly to body) and 2*N+1 is the "ankle" (conn'd to foot).
 
-        # Therefore, leg_index can only go from only 0-7, because it will map to
-        # servos 0-15.
-        assert (leg_index >= 0) and (leg_index <=7), 'leg_index out of bds in Leg.__init__! Val is {}'.format(leg_index)
+        self.hip_servo_index = hip_servo_index
+        self.knee_servo_index = knee_servo_index
 
-        self.leg_index = leg_index
-        self.hip_index = 2*leg_index
-        self.ankle_index = 2*leg_index + 1
+        self.incr_pause = kwargs.get('incr_pause', 0.0005)
 
         # I have to think about this side/direction stuff. Maybe it's a bad
         # way of thinking about it, when it's really just 1D anyway (so really
         # just diff phases, which I already have).
-        self.hip = Servo(self.driver_board, self.hip_index, 1, type='hip')
-        self.ankle = Servo(self.driver_board, self.ankle_index, 1, type='ankle')
+        self.hip = Servo(
+            self.driver_board,
+            self.hip_servo_index,
+            direction=1,
+            type='hip',
+            **kwargs
+        )
+        self.knee = Servo(
+            self.driver_board,
+            self.knee_servo_index,
+            direction=1,
+            type='knee',
+            **kwargs
+        )
 
         self.set_phase_offset(0)
         # Also, I DEFINITELY need to set their phases separately here. I think
         # it'll probably be another top-down thing where the leg gets a phase,
         # and then uses that to set the phases of the servos.
-        self.servos = [self.hip, self.ankle]
+        self.servos = [self.hip, self.knee]
+        self.whole_leg_phase = 0
 
 
 
@@ -47,13 +56,17 @@ class Leg:
         # This should be passed in terms of pi. It's up to a higher
         # level class to determine the relation between the diff phase_offsets.
         self.phase_offset = phase_offset
-
-        if self.side == 'L':
-            self.hip.set_phase_offset(self.phase_offset + 0)
-            self.ankle.set_phase_offset(self.phase_offset + pi/2)
+        print(self.side, self.front_or_back)
+        if self.side == Side.LEFT:
+            if self.front_or_back == FrontOrBack.FRONT:
+                self.hip.set_phase_offset(self.phase_offset + 0)
+                self.knee.set_phase_offset(self.phase_offset + 3 * pi/2)  # have to fix
+            else:
+                self.hip.set_phase_offset(self.phase_offset + 0)  # back left is good
+                self.knee.set_phase_offset(self.phase_offset + pi/2)
         else:
             self.hip.set_phase_offset(self.phase_offset + pi)
-            self.ankle.set_phase_offset(self.phase_offset + -pi/2)
+            self.knee.set_phase_offset(self.phase_offset + -pi/2)
 
 
     def increment(self):
@@ -63,11 +76,22 @@ class Leg:
             s.increment()
 
 
-    def increment_ankle(self):
-        self.ankle.increment()
+    def increment_knee(self):
+        self.knee.increment()
 
 
+    def manual_increment(self):
+        self.hip.set_pwm_from_phase(self.whole_leg_phase)
 
+        if self.front_or_back == FrontOrBack.FRONT:
+            self.knee.set_pwm_from_phase(self.whole_leg_phase + 3 * pi/2)
+        else:
+            self.knee.set_pwm_from_phase(self.whole_leg_phase + 1 * pi/2)
+
+        
+        
+        self.whole_leg_phase = (self.whole_leg_phase + 0.05 * 2 * pi) % (2 * pi)
+        sleep(self.incr_pause)
 
 
 

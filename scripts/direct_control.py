@@ -1,42 +1,68 @@
+import path_utils
+
 from pca9685_driver import Device
 from time import sleep
 
 import curses
 import argparse
+import json
+import os
+
+'''
+This is to create a servo_center_pwm.json file
+that the servos will look at to get their center
+values. It will overwrite any that's there.
+
+It will be first indexed by the I2C addr (40 or 41)
+and then the board index.
+'''
+
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--N_servos', type=int, default='1')
-parser.add_argument('--addr', type=int, default='40')
+parser.add_argument('--addr', type=int, default='41')
 args = parser.parse_args()
 
+backup_pwm_mid_list = [452, 452, 472, 412, 302, 342, 312, 342, 312, 282, 292, 312, 312, 272, 332, 342]
+pwm_dict = {i:val for i,val in enumerate(backup_pwm_mid_list)}
 
-max_servo_index = args.N_servos - 1
-print('Running with {} servos'.format(args.N_servos))
+addr_str = str(args.addr)
+center_file = '../parameters/servo_center_pwm.json'
+if os.path.exists(center_file):
+    print('\nOpening {} and reading dict...'.format(center_file))
+    with open(center_file, 'r') as f:
+        servo_center_dict = json.load(f)
+
+    print('center file keys: ', servo_center_dict.keys())
+    if addr_str in servo_center_dict.keys():
+        print('\nAddr {} in center file, setting pwm_dict to it'.format(addr_str))
+        pwm_dict = servo_center_dict[addr_str]
+        pwm_dict = {int(k):v for k,v in pwm_dict.items()}
+        print('pwm_dict:')
+        [print('{}  :  {}'.format(k, v)) for k,v in pwm_dict.items()]
+    else:
+        print('\nAddr {} NOT in center file, using default.'.format(addr_str))
+else:
+    print('\nFile {} does not exist, using default.'.format(center_file))
+    servo_center_dict = {}
+
 
 # 0x40 from i2cdetect -y 1 (1 if Raspberry pi 2)
-
 print('i2c hex addr:', args.addr, type(args.addr))
-
 if args.addr == 40:
     dev = Device(0x40)
 if args.addr == 41:
     dev = Device(0x41)
 
-
 dev.set_pwm_frequency(50)
 
-max_pwm_val = 4097
+
 min_pwm = 110
 max_pwm = 515
 mid_pwm = int((min_pwm + max_pwm)/2)
 delta_pwm = 10
 
 cur_servo = 0
-pwm_mid_list = [452, 452, 472, 412, 302, 342, 312, 342, 312, 282, 292, 312, 312, 272, 332, 342]
-pwm_dict = {i:pwm_mid_list[i] for i in range(args.N_servos)}
-#init_pwm = mid_pwm
-#pwm_dict = {i:init_pwm for i in range(args.N_servos)}
-[dev.set_pwm(k, v) for k,v in pwm_dict.items()]
+#[dev.set_pwm(k, v) for k,v in pwm_dict.items()]
 
 
 def moveCursorRefresh(stdscr):
@@ -44,12 +70,11 @@ def moveCursorRefresh(stdscr):
     stdscr.refresh() #Do this after addstr
 
 
-
-
 def DCloop(stdscr):
     #https://docs.python.org/3/howto/curses.html
     #https://docs.python.org/3/library/curses.html#curses.window.clrtobot
     global cur_servo, pwm_dict, delta_pwm, mid_pwm
+    max_servo_index = 16 - 1
     move_str_pos = [2, 6]
     cur_servo_str_pos = [4, 6]
     pwm_str_pos = [6, 6]
@@ -115,53 +140,7 @@ def directControl():
     print('exited curses loop.')
 
 
-
-
 directControl()
-
-
-
-
-
-
-
-
-
-
-
-
-
-'''
-        if c == curses.KEY_UP:
-            stdscr.erase()
-
-            stdscr.addstr(*move_str_pos, 'Pressed Up key, going straight')
-            moveCursorRefresh(stdscr)
-
-
-        if c == curses.KEY_DOWN:
-            stdscr.erase()
-
-            stdscr.addstr(*move_str_pos, 'Pressed Down key, going backwards')
-            moveCursorRefresh(stdscr)
-'''
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

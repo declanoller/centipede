@@ -29,7 +29,7 @@ mid_pwm = int((min_pwm + max_pwm)/2)
 delta_pwm = 10
 
 cur_servo = args.index
-pwm_mid_list = [452, 452, 472, 412, 302, 342, 312, 342, 312, 282, 292, 312, 312, 272, 332, 342]
+pwm_mid_list = [190, 312, 442, 292, 292, 305, 282, 192, 312, 282, 292, 312, 312, 272, 332, 342]
 pwm_dict = {i:pwm_mid_list[i] for i in range(len(pwm_mid_list))}
 #init_pwm = mid_pwm
 #pwm_dict = {i:init_pwm for i in range(args.N_servos)}
