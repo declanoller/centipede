@@ -3,12 +3,12 @@ from Leg import Leg
 from DriverBoard import DriverBoard
 import argparse
 from time import time
-from utils import Side, FrontOrBack
+from utils import LeftOrRight, FrontOrBack
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--hip_index', type=int, required=True)
 parser.add_argument('--knee_index', type=int, required=True)
-parser.add_argument('--side', type=Side, required=True, choices=list(Side))
+parser.add_argument('--side', type=LeftOrRight, required=True, choices=list(LeftOrRight))
 parser.add_argument('--front_or_back', type=FrontOrBack, required=True, choices=list(FrontOrBack))
 
 parser.add_argument('--runtime', type=int, default='2')
