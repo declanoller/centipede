@@ -51,22 +51,23 @@ class Servo:
         self.driver_board = driver_board
         self.driver_index = driver_index
 
-        self.pwm_mid = load_center_pwm_from_file(self.driver_board.addr, self.driver_index)
-        print('Set self.pwm_mid to {} from file'.format(self.pwm_mid))
+        # self.pwm_mid = load_center_pwm_from_file(self.driver_board.addr, self.driver_index)
+        # print('Set self.pwm_mid to {} from file'.format(self.pwm_mid))
+        self.pwm_mid = 90
 
         self.direction = direction
         self.phase = 0
         self.phase_offset = 0
         self.phase_incr = 0.05 * 2 * pi
         self.reset_pause = 0.05
-        self.pwm_amplitude = 35
+        self.pwm_amplitude = 15  # originally 35
         self.incr_pause = kwargs.get('incr_pause', 0.005)
         self.servo_type = servo_type
 
 
         self.amp_mod = 1.0
         if self.servo_type == 'knee':
-            self.amp_mod = 1.2
+            self.amp_mod = 2.8
 
 
     def reset_to_middle(self):
@@ -86,7 +87,8 @@ class Servo:
         pwm = int(self.pwm_mid + self.amp_mod * self.pwm_amplitude * sin(phase))
         self.phase = phase
         # Actually set the pwm of the servo
-        self.driver_board.set_index_pwm(self.driver_index, pwm)
+        # self.driver_board.set_servo_pwm(self.driver_index, pwm)
+        self.driver_board.set_servo_angle(self.driver_index, pwm)
         sleep(self.incr_pause)
 
 

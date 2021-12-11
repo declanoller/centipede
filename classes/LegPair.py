@@ -1,49 +1,42 @@
+from utils import HipKneeIndices, LeftOrRight, FrontOrBack
 from Leg import Leg
+from math import pi
+
 
 class LegPair:
 
-    def __init__(self, driver_board, pair_index, **kwargs):
+    def __init__(self, driver_board, front_or_back: FrontOrBack, 
+                left_hip_knee_indices: HipKneeIndices, 
+                right_hip_knee_indices: HipKneeIndices, **kwargs):
 
         # Here, pair_index N will correspond to Leg's 2*N and 2*N+1.
         # Since a Leg has 2 Servo obj's, and a Pair has 2 Leg obj's,
         # it has 4 Servo obj's, and therefore there are only 4 Pair's
         # to a driver_board.
-        assert (pair_index >= 0) and (pair_index <=3), 'pair_index out of bds in Pair.__init__! Val : {}'.format(pair_index)
 
-        self.pair_index = pair_index
-        self.leg_L_index = 2*pair_index
-        self.leg_R_index = 2*pair_index + 1
-
-        self.leg_L = Leg(driver_board, 'L', self.leg_L_index, **kwargs)
-        self.leg_R = Leg(driver_board, 'R', self.leg_R_index, **kwargs)
-        self.legs = [self.leg_L, self.leg_R]
+        self.leg_left = Leg(driver_board, LeftOrRight.LEFT, front_or_back=front_or_back, 
+                            hip_knee_indices=left_hip_knee_indices, **kwargs)
+        self.leg_right = Leg(driver_board, LeftOrRight.RIGHT, front_or_back=front_or_back, 
+                            hip_knee_indices=right_hip_knee_indices, **kwargs)
+        self.legs = [self.leg_left, self.leg_right]
 
         self.phase_offset = 0
+        self.phase_incr = 0.05 * 2 * pi
+        self.phase = 0. if front_or_back==FrontOrBack.FRONT else pi
+        self.leg_left_phase_offset = 0.
+        self.leg_right_phase_offset = pi / 1.
 
 
-
-    def set_phase_offset(self, phase_offset):
-        # This should be passed in terms of pi. It's up to a higher
-        # level class to determine the relation between the diff phase_offsets.
-        self.phase_offset = phase_offset
-        self.leg_L.set_phase_offset(-self.phase_offset)
-        self.leg_R.set_phase_offset(self.phase_offset)
+    def increment_phase_and_move(self):
+        self.phase = (self.phase + self.phase_incr) % (2 * pi)
+        self.move_to_phase(self.phase)
+        # sleep(self.incr_pause)
 
 
-    def increment(self):
-
-        # Increments each segment of the leg.
-        for leg in self.legs:
-            leg.increment()
-
-
-
-    def increment_ankles(self):
-
-        # Increments each segment of the leg.
-        for leg in self.legs:
-            leg.increment_ankle()
-
+    def move_to_phase(self, phase):
+        self.phase = phase
+        self.leg_left.move_to_phase(self.phase + self.leg_left_phase_offset)
+        self.leg_right.move_to_phase(self.phase + self.leg_right_phase_offset)
 
 
     def reset_pair(self):

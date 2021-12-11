@@ -1,53 +1,48 @@
 import path_utils
 from LegPair import LegPair
 from DriverBoard import DriverBoard
+from utils import FrontOrBack, HipKneeIndices
 import argparse
-from time import time
+from time import time, sleep
 from math import pi
-from time import sleep
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--N_pairs', type=int, default='1')
-parser.add_argument('--runtime', type=int, default='4')
+parser.add_argument('--runtime', type=int, default='2')
 parser.add_argument('--addr', type=int, default='41')
-parser.add_argument('--pause', type=float, default='0.0005')
+parser.add_argument('--pause', type=float, default='0.01')
 args = parser.parse_args()
 
 b = DriverBoard(args.addr, 16)
 
-if args.N_pairs > 4:
-    b_front = DriverBoard(40, 8)
+# in the format of [left leg indices, right leg indices]
+leg_pair_infos = [
+    ([(4, 3), (6, 1)], FrontOrBack.FRONT),
+    ([(5, 0), (7, 2)], FrontOrBack.BACK),
+]
 
-sleep(0.5)
-pairs = []
-for i in range(args.N_pairs):
-    if i < 4:
-        lp = LegPair(b, i, incr_pause=args.pause)
-    else:
-        lp = LegPair(b_front, i-4, incr_pause=args.pause)
+# Create all leg pairs
+leg_pairs = []
+for leg_pair_indices, front_or_back in leg_pair_infos:
+    leg_pairs.append(
+                    LegPair(
+                        b,
+                        front_or_back,
+                        HipKneeIndices(*leg_pair_indices[0]),
+                        HipKneeIndices(*leg_pair_indices[1]),
+                        incr_pause=args.pause,
+                    )
+    )
 
-    if i%2 == 1:
-        lp.set_phase_offset(pi)
-    pairs.append(lp)
 
+# Start loop
 start = time()
-time_limit = args.runtime
-
 while True:
-    for p in pairs:
-        p.increment()
-
-    if time()-start > time_limit:
+    for leg_pair in leg_pairs:
+        leg_pair.increment_phase_and_move()
+    if time() - start > args.runtime:
         break
 
-for p in pairs:
-    p.reset_pair()
-
-
-
-
-
-
-
+for leg_pair in leg_pairs:
+    leg_pair.reset_pair()
 
 #
